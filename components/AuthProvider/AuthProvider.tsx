@@ -21,7 +21,6 @@ export default function AuthProvider({
         const sessionUser = await checkSession();
         if (sessionUser) {
           setUser(sessionUser);
-          // Якщо авторизований намагається зайти на сторінки входу
           if (pathname === '/sign-in' || pathname === '/sign-up') {
             router.replace('/profile');
           }
