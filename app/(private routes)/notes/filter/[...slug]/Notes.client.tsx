@@ -23,18 +23,31 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
   const [searchValue, setSearchValue] = useState(
     searchParams.get('search') || ''
   );
+
   const [debouncedSearch] = useDebounce(searchValue, 500);
 
   const currentPage = Number(searchParams.get('page')) || 1;
   const apiTag = activeTag === 'all' ? '' : activeTag;
 
+  const searchString = searchParams.toString();
+
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    else params.delete('search');
+    const params = new URLSearchParams(searchString);
+
+    if (debouncedSearch) {
+      params.set('search', debouncedSearch);
+    } else {
+      params.delete('search');
+    }
+
     params.set('page', '1');
-    router.replace(`${pathname}?${params.toString()}`);
-  }, [debouncedSearch, pathname, router]);
+
+    const newQuery = params.toString();
+
+    if (newQuery !== searchString) {
+      router.replace(`${pathname}?${newQuery}`);
+    }
+  }, [debouncedSearch, pathname, router, searchString]);
 
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -42,9 +55,9 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['notes', activeTag, currentPage, debouncedSearch],
-    queryFn: () => fetchNotes(currentPage, 12, apiTag, debouncedSearch), 
+    queryFn: () => fetchNotes(currentPage, 12, apiTag, debouncedSearch),
   });
 
   const notes = data?.notes || [];
@@ -67,11 +80,17 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
         </Link>
       </header>
 
-      {notes.length > 0 && <NoteList notes={notes} />}
-
-      {notes.length === 0 && !data && (
-        <p className={css.emptyMessage}>No notes found.</p>
-      )}
+      <main className={css.content}>
+        {isLoading ? (
+          <p>Loading notes...</p>
+        ) : notes.length > 0 ? (
+          <NoteList notes={notes} />
+        ) : (
+          <div className={css.emptyState}>
+            <p>No notes found for this category or search query.</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

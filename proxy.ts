@@ -16,7 +16,7 @@ export async function proxy(request: NextRequest) {
   let isAuthenticated = !!accessToken;
   let refreshedCookies: string[] = [];
 
-  if (refreshToken && (isPrivateRoute || isApiRoute) && !accessToken) {
+  if (!accessToken && refreshToken && (isPrivateRoute || isApiRoute)) {
     try {
       const sessionResponse = await checkSession();
       if (sessionResponse.status === 200) {
@@ -32,36 +32,29 @@ export async function proxy(request: NextRequest) {
   }
 
   const requestHeaders = new Headers(request.headers);
-
+  
   if (refreshedCookies.length > 0) {
+    const newCookiesArray = refreshedCookies.map(c => c.split(';')[0]);
     const currentCookies = request.headers.get('cookie') || '';
     
-    const newCookiesMap = new Map();
-    refreshedCookies.forEach(c => {
-      const [pair] = c.split(';');
-      const [name, value] = pair.split('=');
-      newCookiesMap.set(name.trim(), value.trim());
-    });
-
     let updatedCookieString = currentCookies;
-    newCookiesMap.forEach((value, name) => {
+    newCookiesArray.forEach(newCookie => {
+      const [name] = newCookie.split('=');
       if (updatedCookieString.includes(`${name}=`)) {
         updatedCookieString = updatedCookieString.replace(
           new RegExp(`${name}=[^;]+`),
-          `${name}=${value}`
+          newCookie
         );
       } else {
-        updatedCookieString += `; ${name}=${value}`;
+        updatedCookieString += updatedCookieString ? `; ${newCookie}` : newCookie;
       }
     });
 
     requestHeaders.set('cookie', updatedCookieString);
   }
-
   if (isPrivateRoute && !isAuthenticated && !refreshToken) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
-
   if (isAuthRoute && isAuthenticated) {
     return NextResponse.redirect(new URL('/', request.url));
   }
@@ -90,5 +83,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/profile/:path*', '/notes/:path*', '/sign-in', '/sign-up', '/api/:path*'],
+  matcher: [
+    '/profile/:path*',
+    '/notes/:path*',
+    '/sign-in',
+    '/sign-up',
+    '/api/:path*' 
+  ],
 };
