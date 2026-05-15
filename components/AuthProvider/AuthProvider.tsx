@@ -26,7 +26,7 @@ export default function AuthProvider({
     refresh();
   }, [setUser, clearIsAuthenticated]);
 
-  if (isRefreshing) return <p>Loading session...</p>; // Твій лоадер тут
+  if (isRefreshing) return <p>Loading session...</p>;
 
   return <>{children}</>;
 }
