@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers'; 
+import { cookies } from 'next/headers';
 import { checkSession } from '@/lib/api/serverApi';
 
 export async function proxy(request: NextRequest) {
@@ -11,16 +11,17 @@ export async function proxy(request: NextRequest) {
 
   const isAuthRoute = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up');
   const isPrivateRoute = pathname.startsWith('/notes') || pathname.startsWith('/profile');
-  const isApiRoute = pathname.startsWith('/api');
 
   let isAuthenticated = !!accessToken;
   let refreshedCookies: string[] = [];
 
-  if (!accessToken && refreshToken && (isPrivateRoute || isApiRoute)) {
+  if (!accessToken && refreshToken && isPrivateRoute) {
     try {
       const sessionResponse = await checkSession();
+      
       if (sessionResponse.status === 200) {
         isAuthenticated = true;
+        
         const rawHeaders = sessionResponse.headers['set-cookie'];
         if (rawHeaders) {
           refreshedCookies = Array.isArray(rawHeaders) ? rawHeaders : [rawHeaders];
@@ -31,51 +32,19 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const requestHeaders = new Headers(request.headers);
-  
-  if (refreshedCookies.length > 0) {
-    const newCookiesArray = refreshedCookies.map(c => c.split(';')[0]);
-    const currentCookies = request.headers.get('cookie') || '';
-    
-    let updatedCookieString = currentCookies;
-    newCookiesArray.forEach(newCookie => {
-      const [name] = newCookie.split('=');
-      if (updatedCookieString.includes(`${name}=`)) {
-        updatedCookieString = updatedCookieString.replace(
-          new RegExp(`${name}=[^;]+`),
-          newCookie
-        );
-      } else {
-        updatedCookieString += updatedCookieString ? `; ${newCookie}` : newCookie;
-      }
-    });
-
-    requestHeaders.set('cookie', updatedCookieString);
-  }
-  if (isPrivateRoute && !isAuthenticated && !refreshToken) {
+  if (isPrivateRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
+
   if (isAuthRoute && isAuthenticated) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  const response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  const response = NextResponse.next();
 
   if (refreshedCookies.length > 0) {
     refreshedCookies.forEach((cookieString) => {
-      const [fullCookie] = cookieString.split(';');
-      const [name, value] = fullCookie.split('=');
-      
-      response.cookies.set(name.trim(), value.trim(), {
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-      });
+      response.headers.append('Set-Cookie', cookieString);
     });
   }
 
@@ -87,7 +56,6 @@ export const config = {
     '/profile/:path*',
     '/notes/:path*',
     '/sign-in',
-    '/sign-up',
-    '/api/:path*' 
+    '/sign-up'
   ],
 };
