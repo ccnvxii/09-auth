@@ -1,49 +1,51 @@
+// lib/api/serverApi.ts
 import { api } from './api';
+import { Note, NotesResponse } from '@/types/note';
+import { User } from '@/types/user';
 import { cookies } from 'next/headers';
-import { User } from '../../types/user';
+import { AxiosResponse } from 'axios';
 
-const getServerHeaders = async () => {
+export const fetchNotes = async (
+  page: number | string,
+  perPage: number | string,
+  tag: string = '',
+  search: string = ''
+): Promise<NotesResponse> => {
   const cookieStore = await cookies();
-  return {
-    headers: {
-      Cookie: cookieStore.toString(),
-    },
-  };
+  const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+
+  const { data } = await api.get<NotesResponse>('/notes', {
+    params: { page, perPage, tag, title: search },
+    headers: { Cookie: allCookies },
+  });
+  return data;
 };
 
-export const checkSession = async (): Promise<User | null> => {
-  try {
-    const headers = await getServerHeaders();
-    await api.get<{ message: string }>('/auth/session', headers);
-    const userRes = await api.get<User>('/users/me', headers);
-    return userRes.data;
-  } catch {
-    return null;
-  }
+export const getMe = async (): Promise<User> => {
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+
+  const { data } = await api.get<User>('/users/me', {
+    headers: { Cookie: allCookies },
+  });
+  return data;
 };
 
-export const getMe = async (): Promise<User | null> => {
-  try {
-    const headers = await getServerHeaders();
-    const res = await api.get<User>('/users/me', headers);
-    return res.data;
-  } catch {
-    return null;
-  }
+export const checkSession = async (): Promise<AxiosResponse<User>> => {
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+
+  return api.get<User>('/auth/session', {
+    headers: { Cookie: allCookies },
+  });
 };
 
-export const fetchNotes = async (page = 1, search = '', tag = '') => {
-  const headers = await getServerHeaders();
-  const params: Record<string, string | number> = { page, perPage: 12 };
-  if (search.trim()) params.search = search;
-  if (tag && tag !== 'all') params.tag = tag;
+export const fetchNoteById = async (id: string): Promise<Note> => {
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
 
-  const res = await api.get('/notes', { ...headers, params });
-  return res.data;
-};
-
-export const fetchNoteById = async (id: string) => {
-  const headers = await getServerHeaders();
-  const res = await api.get(`/notes/${id}`, headers);
-  return res.data;
+  const { data } = await api.get<Note>(`/notes/${id}`, {
+    headers: { Cookie: allCookies },
+  });
+  return data;
 };

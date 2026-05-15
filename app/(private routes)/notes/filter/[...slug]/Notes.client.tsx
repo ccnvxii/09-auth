@@ -1,8 +1,10 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { fetchNotes, deleteNote } from '@/lib/api/clientApi';
+import { useDebounce } from 'use-debounce';
+import { fetchNotes } from '@/lib/api/clientApi';
 import NoteList from '@/components/NoteList/NoteList';
 import Pagination from '@/components/Pagination/Pagination';
 import SearchBox from '@/components/SearchBox/SearchBox';
@@ -19,50 +21,50 @@ export default function NotesClient({
   activeTag,
   initialData,
 }: NotesClientProps) {
-  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
+  const [searchValue, setSearchValue] = useState(
+    searchParams.get('search') || ''
+  );
+
+  const [debouncedSearch] = useDebounce(searchValue, 500);
+
   const currentPage = Number(searchParams.get('page')) || 1;
-  const searchQuery = searchParams.get('search') || '';
   const apiTag = activeTag === 'all' ? '' : activeTag;
 
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (debouncedSearch) {
+      params.set('search', debouncedSearch);
+    } else {
+      params.delete('search');
+    }
+
+    params.set('page', '1');
+
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [debouncedSearch, pathname, router]);
+
+  // 4. Функція для пагінації
   const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set('page', page.toString());
     router.replace(`${pathname}?${params.toString()}`);
   };
 
-  const handleSearch = (query: string) => {
-    const params = new URLSearchParams(searchParams);
-    if (query) {
-      params.set('search', query);
-    } else {
-      params.delete('search');
-    }
-    params.set('page', '1');
-    router.replace(`${pathname}?${params.toString()}`);
-  };
-
   const { data } = useQuery({
-    queryKey: ['notes', activeTag, currentPage, searchQuery],
-    queryFn: () => fetchNotes(currentPage, 12, apiTag, searchQuery),
+    queryKey: ['notes', activeTag, currentPage, debouncedSearch],
+    queryFn: () => fetchNotes(currentPage, 12, apiTag, debouncedSearch),
     initialData,
-  });
-
-  const mutation = useMutation({
-    mutationFn: deleteNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-    },
   });
 
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        {/* Тепер handleSearch визначено */}
-        <SearchBox onSearch={handleSearch} />
+        <SearchBox onSearch={setSearchValue} />
 
         {data && data.totalPages > 1 ? (
           <Pagination
@@ -79,10 +81,7 @@ export default function NotesClient({
         </Link>
       </header>
 
-      <NoteList
-        notes={data?.notes || []}
-        onDelete={(id: string) => mutation.mutate(id)}
-      />
+      <NoteList notes={data?.notes || []} />
     </div>
   );
 }

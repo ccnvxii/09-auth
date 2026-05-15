@@ -1,51 +1,36 @@
-import { Metadata } from 'next';
-import { Roboto } from 'next/font/google';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
 import Header from '@/components/Header/Header';
 import Footer from '@/components/Footer/Footer';
 import TanStackProvider from '@/components/TanStackProvider/TanStackProvider';
-import './globals.css';
+import AuthProvider from '@/components/AuthProvider/AuthProvider';
 
-// Підключаємо шрифт Roboto згідно з вимогами ТЗ
-const roboto = Roboto({
-  subsets: ['latin'],
-  weight: ['400', '500', '700'],
-  variable: '--font-roboto',
-  display: 'swap',
-});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'NoteHub - Your Personal Note Management System',
-  description: 'Easily organize, filter, and manage your daily notes and tasks.',
-  openGraph: {
-    title: 'NoteHub - Your Personal Note Management System',
-    description: 'Easily organize, filter, and manage your daily notes and tasks.',
-    images: [
-      {
-        url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'NoteHub Preview',
-      },
-    ],
-    type: 'website',
-  },
+  title: 'NoteHub',
+  description: 'Your personal note management system',
 };
 
-export default function RootLayout({
-  children,
-  modal,
-}: {
+interface RootLayoutProps {
   children: React.ReactNode;
   modal: React.ReactNode;
-}) {
+}
+
+export default function RootLayout({ children, modal }: RootLayoutProps) {
   return (
-    <html lang="en" className={roboto.variable}>
-      <body style={{ fontFamily: 'var(--font-roboto), sans-serif' }}>
+    <html lang="en">
+      <body className={inter.className}>
         <TanStackProvider>
-          <Header />
-          <main>{children}</main>
-          {modal}
-          <Footer />
+          <AuthProvider>
+            <div className="flex flex-col min-h-screen">
+              <Header />
+              <main className="flex-grow">{children}</main>
+              {modal}
+              <Footer />
+            </div>
+          </AuthProvider>
         </TanStackProvider>
       </body>
     </html>
