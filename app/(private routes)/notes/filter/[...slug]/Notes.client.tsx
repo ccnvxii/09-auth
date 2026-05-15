@@ -47,19 +47,19 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
     queryFn: () => fetchNotes(currentPage, 12, apiTag, debouncedSearch),
   });
 
+  const notes = data?.notes || [];
+
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
         <SearchBox onSearch={setSearchValue} />
 
-        {data && data.totalPages > 1 ? (
+        {data && data.totalPages > 1 && (
           <Pagination
             totalPages={data.totalPages}
             currentPage={currentPage}
             onChange={handlePageChange}
           />
-        ) : (
-          <div />
         )}
 
         <Link href="/notes/action/create" className={css.button}>
@@ -67,7 +67,11 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
         </Link>
       </header>
 
-      <NoteList notes={data?.notes || []} />
+      {notes.length > 0 && <NoteList notes={notes} />}
+
+      {notes.length === 0 && !data && (
+        <p className={css.emptyMessage}>No notes found.</p>
+      )}
     </div>
   );
 }

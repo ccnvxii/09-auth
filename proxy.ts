@@ -19,9 +19,20 @@ export async function proxy(request: NextRequest) {
       if (sessionResponse.status === 200) {
         isAuthenticated = true;
         
-        const setCookieHeader = sessionResponse.headers['set-cookie'];
-        if (setCookieHeader) {
-          response.headers.set('set-cookie', setCookieHeader.join(', '));
+        const setCookieHeaders = sessionResponse.headers['set-cookie'];
+        
+        if (setCookieHeaders) {
+          setCookieHeaders.forEach((cookieString) => {
+            const [fullCookie] = cookieString.split(';');
+            const [name, value] = fullCookie.split('=');
+            
+            response.cookies.set(name.trim(), value.trim(), {
+              path: '/',
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+            });
+          });
         }
       }
     } catch {
@@ -41,10 +52,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/profile/:path*',
-    '/notes/:path*',
-    '/sign-in',
-    '/sign-up'
-  ],
+  matcher: ['/profile/:path*', '/notes/:path*', '/sign-in', '/sign-up'],
 };
