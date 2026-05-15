@@ -1,6 +1,6 @@
 import { api } from './api';
 import { cookies } from 'next/headers';
-import { User } from '@/types/user';
+import { User } from '../../types/user';
 
 const getServerHeaders = async () => {
   const cookieStore = await cookies();
@@ -11,7 +11,7 @@ const getServerHeaders = async () => {
   };
 };
 
-export const checkSessionServer = async (): Promise<User | null> => {
+export const checkSession = async (): Promise<User | null> => {
   try {
     const headers = await getServerHeaders();
     await api.get<{ message: string }>('/auth/session', headers);
@@ -22,7 +22,7 @@ export const checkSessionServer = async (): Promise<User | null> => {
   }
 };
 
-export const getMeServer = async (): Promise<User | null> => {
+export const getMe = async (): Promise<User | null> => {
   try {
     const headers = await getServerHeaders();
     const res = await api.get<User>('/users/me', headers);
@@ -32,10 +32,9 @@ export const getMeServer = async (): Promise<User | null> => {
   }
 };
 
-export const fetchNotesServer = async (page = 1, search = '', tag = '') => {
+export const fetchNotes = async (page = 1, search = '', tag = '') => {
   const headers = await getServerHeaders();
   const params: Record<string, string | number> = { page, perPage: 12 };
-  
   if (search.trim()) params.search = search;
   if (tag && tag !== 'all') params.tag = tag;
 
@@ -43,7 +42,7 @@ export const fetchNotesServer = async (page = 1, search = '', tag = '') => {
   return res.data;
 };
 
-export const fetchNoteByIdServer = async (id: string) => {
+export const fetchNoteById = async (id: string) => {
   const headers = await getServerHeaders();
   const res = await api.get(`/notes/${id}`, headers);
   return res.data;

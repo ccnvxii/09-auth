@@ -1,53 +1,38 @@
-import { Metadata } from 'next';
+import { fetchNoteById } from '@/lib/api/serverApi';
+import { notFound } from 'next/navigation';
+import NoteDetailsClient from './NoteDetails.client';
 import {
+  QueryClient,
   dehydrate,
   HydrationBoundary,
-  QueryClient,
 } from '@tanstack/react-query';
-import { fetchNoteById } from '@/lib/api';
-import NoteDetailsClient from './NoteDetails.client';
 
-export async function generateMetadata({
-  params,
-}: {
+interface Props {
   params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+}
+
+export default async function NotePage({ params }: Props) {
   const { id } = await params;
-  try {
-    const note = await fetchNoteById(id);
-    return {
-      title: `${note.title} | NoteHub`,
-      description: note.content.slice(0, 160),
-      openGraph: {
-        title: `${note.title} | NoteHub`,
-        description: note.content.slice(0, 160),
-        url: `https://notehub.app/notes/${id}`,
-        images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
-      },
-    };
-  } catch {
-    return {
-      title: 'Note Details | NoteHub',
-      description: 'View individual note context and details.',
-    };
-  }
-}
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default async function NotePage({ params }: PageProps) {
-  const { id } = await params; // Обов'язково додаємо await для розпакування id
   const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ['note', id],
-    queryFn: () => fetchNoteById(id),
-  });
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: ['note', id],
+      queryFn: () => fetchNoteById(id),
+    });
+  } catch (error) {
+    return notFound();
+  }
+
+  const initialData = queryClient.getQueryData(['note', id]);
+
+  if (!initialData) {
+    return notFound();
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <NoteDetailsClient />
+      <NoteDetailsClient id={id} initialData={initialData} />
     </HydrationBoundary>
   );
 }

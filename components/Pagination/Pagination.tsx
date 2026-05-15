@@ -1,28 +1,38 @@
-import ReactPaginate from 'react-paginate';
+'use client';
+
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import css from './Pagination.module.css';
 
 interface PaginationProps {
-  pageCount: number;
-  forcePage: number;
-  onPageChange: (selected: number) => void;
+  totalPages: number;
 }
 
-export default function Pagination({
-  pageCount,
-  forcePage,
-  onPageChange,
-}: PaginationProps) {
+export default function Pagination({ totalPages }: PaginationProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { replace } = useRouter();
+
+  const currentPage = Number(searchParams.get('page')) || 1;
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', page.toString());
+    replace(`${pathname}?${params.toString()}`);
+  };
+
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
   return (
-    <ReactPaginate
-      pageCount={pageCount}
-      onPageChange={(data: { selected: number }) => onPageChange(data.selected)}
-      forcePage={forcePage}
-      containerClassName={css.pagination}
-      activeClassName={css.active}
-      previousLabel="←"
-      nextLabel="→"
-      pageRangeDisplayed={5}
-      marginPagesDisplayed={1}
-    />
+    <div className={css.pagination}>
+      {pages.map(page => (
+        <button
+          key={page}
+          onClick={() => handlePageChange(page)}
+          className={`${css.pageButton} ${currentPage === page ? css.active : ''}`}
+        >
+          {page}
+        </button>
+      ))}
+    </div>
   );
 }
