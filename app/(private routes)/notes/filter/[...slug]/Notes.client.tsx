@@ -1,14 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Toaster } from 'react-hot-toast';
 import { fetchNotes } from '@/lib/api/clientApi';
-import NoteList from '@/components/NoteList/NoteList';
-import SearchBox from '@/components/SearchBox/SearchBox';
-import Pagination from '@/components/Pagination/Pagination';
-import css from '../../Notes.module.css';
 import { NotesResponse } from '@/types/note';
+import NoteList from '@/components/NoteList/NoteList';
+import Link from 'next/link';
+import css from '../../Notes.module.css';
 
 interface NotesClientProps {
   activeTag: string;
@@ -19,25 +16,24 @@ export default function NotesClient({
   activeTag,
   initialData,
 }: NotesClientProps) {
-  const [search, setSearch] = useState('');
-
   const { data } = useQuery({
-    queryKey: ['notes', activeTag, search],
-    queryFn: () => fetchNotes(1, search, activeTag),
+    queryKey: ['notes', activeTag],
+    queryFn: () => fetchNotes(1, '', activeTag === 'all' ? '' : activeTag),
     initialData,
-    placeholderData: previousData => previousData,
   });
 
   return (
     <div className={css.container}>
-      <Toaster />
-      <div className={css.toolbar}>
-        <SearchBox onSearch={setSearch} />
-      </div>
+      <header className={css.header}>
+        <h1 className={css.title}>
+          {activeTag === 'all' ? 'All Notes' : `${activeTag} Notes`}
+        </h1>
+        <Link href="/notes/action/create" className={css.createButton}>
+          + Create New Note
+        </Link>
+      </header>
 
       <NoteList notes={data?.notes || []} />
-
-      {data?.totalPages > 1 && <Pagination totalPages={data.totalPages} />}
     </div>
   );
 }
