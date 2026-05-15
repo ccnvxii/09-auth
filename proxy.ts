@@ -3,22 +3,28 @@ import { checkSession } from '@/lib/api/serverApi';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
   const accessToken = request.cookies.get('accessToken')?.value;
   const refreshToken = request.cookies.get('refreshToken')?.value;
 
   const isAuthRoute = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up');
   const isPrivateRoute = pathname.startsWith('/notes') || pathname.startsWith('/profile');
 
+  const response = NextResponse.next();
   let isAuthenticated = !!accessToken;
 
   if (!accessToken && refreshToken) {
     try {
-      const response = await checkSession();
-      if (response.status === 200) {
+      const sessionResponse = await checkSession();
+      
+      if (sessionResponse.status === 200) {
         isAuthenticated = true;
+        
+        const setCookieHeader = sessionResponse.headers['set-cookie'];
+        if (setCookieHeader) {
+          response.headers.set('set-cookie', setCookieHeader.join(', '));
+        }
       }
-    } catch  {
+    } catch {
       isAuthenticated = false;
     }
   }
@@ -31,11 +37,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/profile/:path*',
+    '/notes/:path*',
+    '/sign-in',
+    '/sign-up'
   ],
 };

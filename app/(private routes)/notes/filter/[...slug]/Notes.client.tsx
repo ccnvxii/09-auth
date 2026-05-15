@@ -9,18 +9,13 @@ import NoteList from '@/components/NoteList/NoteList';
 import Pagination from '@/components/Pagination/Pagination';
 import SearchBox from '@/components/SearchBox/SearchBox';
 import Link from 'next/link';
-import { NotesResponse } from '@/types/note';
 import css from '../../Notes.module.css';
 
 interface NotesClientProps {
   activeTag: string;
-  initialData: NotesResponse;
 }
 
-export default function NotesClient({
-  activeTag,
-  initialData,
-}: NotesClientProps) {
+export default function NotesClient({ activeTag }: NotesClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -28,7 +23,6 @@ export default function NotesClient({
   const [searchValue, setSearchValue] = useState(
     searchParams.get('search') || ''
   );
-
   const [debouncedSearch] = useDebounce(searchValue, 500);
 
   const currentPage = Number(searchParams.get('page')) || 1;
@@ -36,19 +30,12 @@ export default function NotesClient({
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-
-    if (debouncedSearch) {
-      params.set('search', debouncedSearch);
-    } else {
-      params.delete('search');
-    }
-
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    else params.delete('search');
     params.set('page', '1');
-
     router.replace(`${pathname}?${params.toString()}`);
   }, [debouncedSearch, pathname, router]);
 
-  // 4. Функція для пагінації
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', page.toString());
@@ -58,7 +45,6 @@ export default function NotesClient({
   const { data } = useQuery({
     queryKey: ['notes', activeTag, currentPage, debouncedSearch],
     queryFn: () => fetchNotes(currentPage, 12, apiTag, debouncedSearch),
-    initialData,
   });
 
   return (
