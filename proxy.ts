@@ -11,36 +11,66 @@ export async function proxy(request: NextRequest) {
 
   const isAuthRoute = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up');
   const isPrivateRoute = pathname.startsWith('/notes') || pathname.startsWith('/profile');
+  const isApiRoute = pathname.startsWith('/api');
 
   let isAuthenticated = !!accessToken;
   let refreshedCookies: string[] = [];
 
-  if (!accessToken && refreshToken) {
+  if (refreshToken && (isPrivateRoute || isApiRoute) && !accessToken) {
     try {
       const sessionResponse = await checkSession();
-      
       if (sessionResponse.status === 200) {
         isAuthenticated = true;
-        
         const rawHeaders = sessionResponse.headers['set-cookie'];
         if (rawHeaders) {
           refreshedCookies = Array.isArray(rawHeaders) ? rawHeaders : [rawHeaders];
         }
       }
-    } catch (error) {
+    } catch {
       isAuthenticated = false;
     }
   }
 
-  let response: NextResponse;
+  const requestHeaders = new Headers(request.headers);
 
-  if (isPrivateRoute && !isAuthenticated) {
-    response = NextResponse.redirect(new URL('/sign-in', request.url));
-  } else if (isAuthRoute && isAuthenticated) {
-    response = NextResponse.redirect(new URL('/', request.url));
-  } else {
-    response = NextResponse.next();
+  if (refreshedCookies.length > 0) {
+    const currentCookies = request.headers.get('cookie') || '';
+    
+    const newCookiesMap = new Map();
+    refreshedCookies.forEach(c => {
+      const [pair] = c.split(';');
+      const [name, value] = pair.split('=');
+      newCookiesMap.set(name.trim(), value.trim());
+    });
+
+    let updatedCookieString = currentCookies;
+    newCookiesMap.forEach((value, name) => {
+      if (updatedCookieString.includes(`${name}=`)) {
+        updatedCookieString = updatedCookieString.replace(
+          new RegExp(`${name}=[^;]+`),
+          `${name}=${value}`
+        );
+      } else {
+        updatedCookieString += `; ${name}=${value}`;
+      }
+    });
+
+    requestHeaders.set('cookie', updatedCookieString);
   }
+
+  if (isPrivateRoute && !isAuthenticated && !refreshToken) {
+    return NextResponse.redirect(new URL('/sign-in', request.url));
+  }
+
+  if (isAuthRoute && isAuthenticated) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   if (refreshedCookies.length > 0) {
     refreshedCookies.forEach((cookieString) => {
@@ -60,10 +90,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/profile/:path*',
-    '/notes/:path*',
-    '/sign-in',
-    '/sign-up'
-  ],
+  matcher: ['/profile/:path*', '/notes/:path*', '/sign-in', '/sign-up', '/api/:path*'],
 };

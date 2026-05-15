@@ -15,6 +15,7 @@ export default function AuthNavigation() {
       await logout();
       clearIsAuthenticated();
       router.push('/sign-in');
+      router.refresh();
     } catch (err) {
       console.error('Logout failed', err);
     }
@@ -25,38 +26,35 @@ export default function AuthNavigation() {
       {isAuthenticated && user ? (
         <>
           <li className={css.navigationItem}>
-            <Link
-              href="/profile"
-              prefetch={false}
-              className={css.navigationLink}
-            >
+            <Link href="/notes/filter/all" className={css.navigationLink}>
+              Notes
+            </Link>
+          </li>
+
+          <li className={css.navigationItem}>
+            <Link href="/profile" className={css.navigationLink}>
               Profile
             </Link>
           </li>
+
           <li className={css.navigationItem}>
-            <p className={css.userEmail}>{user.email}</p>
-            <button className={css.logoutButton} onClick={handleLogout}>
-              Logout
-            </button>
+            <div className={css.userWrapper}>
+              <span className={css.userEmail}>{user.email}</span>
+              <button className={css.logoutButton} onClick={handleLogout}>
+                Logout
+              </button>
+            </div>
           </li>
         </>
       ) : (
         <>
           <li className={css.navigationItem}>
-            <Link
-              href="/sign-in"
-              prefetch={false}
-              className={css.navigationLink}
-            >
+            <Link href="/sign-in" className={css.navigationLink}>
               Login
             </Link>
           </li>
           <li className={css.navigationItem}>
-            <Link
-              href="/sign-up"
-              prefetch={false}
-              className={css.navigationLink}
-            >
+            <Link href="/sign-up" className={css.navigationLink}>
               Sign up
             </Link>
           </li>

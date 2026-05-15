@@ -1,41 +1,35 @@
 import {
-  QueryClient,
   dehydrate,
   HydrationBoundary,
+  QueryClient,
 } from '@tanstack/react-query';
 import { fetchNotes } from '@/lib/api/serverApi';
 import NotesClient from './Notes.client';
-import { NotesResponse } from '@/types/note';
 
-interface PageProps {
+interface Props {
   params: Promise<{ slug: string[] }>;
+  searchParams: Promise<{ page?: string; search?: string }>;
 }
 
-export default async function NotesFilterPage({ params }: PageProps) {
-  const resolvedParams = await params;
-  const activeTag = resolvedParams.slug[0] || 'all';
-
-  const apiTag = activeTag === 'all' ? '' : activeTag;
-
+export default async function NotesPage({ params, searchParams }: Props) {
   const queryClient = new QueryClient();
 
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+
+  const activeTag = resolvedParams.slug[0] || 'all';
+  const currentPage = Number(resolvedSearchParams.page) || 1;
+  const searchQuery = resolvedSearchParams.search || '';
+  const apiTag = activeTag === 'all' ? '' : activeTag;
+
   await queryClient.prefetchQuery({
-    queryKey: ['notes', activeTag],
-    queryFn: () => fetchNotes(1, '', apiTag),
+    queryKey: ['notes', activeTag, currentPage, searchQuery],
+    queryFn: () => fetchNotes(currentPage, 12, apiTag, searchQuery),
   });
 
-  const dehydratedState = dehydrate(queryClient);
-
-  const initialData = queryClient.getQueryData<NotesResponse>([
-    'notes',
-    activeTag,
-  ]);
-
-  const fallbackData = initialData || { notes: [], totalPages: 0 };
-
   return (
-    <HydrationBoundary state={dehydratedState}>
-      <NotesClient activeTag={activeTag} initialData={fallbackData} />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <NotesClient activeTag={activeTag} />
     </HydrationBoundary>
   );
 }

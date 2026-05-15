@@ -44,7 +44,7 @@ export default function NotesClient({ activeTag }: NotesClientProps) {
 
   const { data } = useQuery({
     queryKey: ['notes', activeTag, currentPage, debouncedSearch],
-    queryFn: () => fetchNotes(currentPage, 12, apiTag, debouncedSearch),
+    queryFn: () => fetchNotes(currentPage, 12, apiTag, debouncedSearch), 
   });
 
   const notes = data?.notes || [];

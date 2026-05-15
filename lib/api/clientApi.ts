@@ -35,14 +35,14 @@ export const updateMe = async (data: { username: string }): Promise<User> => {
   return res.data;
 };
 
-export const fetchNotes = async (
-  page: number | string, 
-  perPage: number | string, 
-  tag: string,
-  search: string = '' 
-) => {
-  const { data } = await api.get<NotesResponse>(`/notes`, {
-    params: { page, perPage, tag, title: search },
+export const fetchNotes = async (page: number, perPage: number, tag: string, search: string = '') => {
+  const { data } = await api.get<NotesResponse>('/notes', {
+    params: { 
+      page, 
+      perPage: perPage || 12, 
+      tag, 
+      title: search 
+    },
   });
   return data;
 };
