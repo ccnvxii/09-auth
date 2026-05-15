@@ -27,9 +27,10 @@ export default function SignInPage() {
       setUser(user);
       router.refresh();
       router.push('/profile');
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
       const message =
-        err.response?.data?.message || 'Invalid email or password';
+        error.response?.data?.message || 'Invalid email or password';
       setError(message);
     } finally {
       setIsLoading(false);
