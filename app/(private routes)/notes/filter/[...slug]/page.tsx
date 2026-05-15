@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query';
 import { fetchNotes } from '@/lib/api/serverApi';
 import NotesClient from './Notes.client';
+import { NotesResponse } from '@/types/note'; // 1. Переконайся, що імпорт є
 
 interface PageProps {
   params: Promise<{ slug: string[] }>;
@@ -22,7 +23,17 @@ export default async function NotesFilterPage({ params }: PageProps) {
   });
 
   const dehydratedState = dehydrate(queryClient);
-  const initialData = queryClient.getQueryData(['notes', activeTag]);
+
+  // 2. ДОДАЙ ГЕНЕРИК <NotesResponse> ТУТ:
+  const initialData = queryClient.getQueryData<NotesResponse>([
+    'notes',
+    activeTag,
+  ]);
+
+  // 3. Додаємо перевірку на випадок, якщо дані не завантажились
+  if (!initialData) {
+    return null; // або редірект/помилка
+  }
 
   return (
     <HydrationBoundary state={dehydratedState}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react'; // Додаємо useState
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { fetchNotes } from '@/lib/api/clientApi';
@@ -8,10 +8,11 @@ import NoteList from '@/components/NoteList/NoteList';
 import SearchBox from '@/components/SearchBox/SearchBox';
 import Pagination from '@/components/Pagination/Pagination';
 import css from '../../Notes.module.css';
+import { NotesResponse } from '@/types/note';
 
 interface NotesClientProps {
   activeTag: string;
-  initialData: any;
+  initialData: NotesResponse;
 }
 
 export default function NotesClient({

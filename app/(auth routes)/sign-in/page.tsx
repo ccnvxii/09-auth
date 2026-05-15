@@ -8,12 +8,16 @@ import css from './SignIn.module.css';
 
 export default function SignInPage() {
   const router = useRouter();
-  const setUser = useAuthStore(state => state.setUser);
-  const [error, setError] = useState('');
+  const { setUser } = useAuthStore();
+
+  const [error, setError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
+
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
@@ -21,9 +25,14 @@ export default function SignInPage() {
     try {
       const user = await login({ email, password });
       setUser(user);
+      router.refresh();
       router.push('/profile');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Authentication failed');
+      const message =
+        err.response?.data?.message || 'Invalid email or password';
+      setError(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -39,6 +48,7 @@ export default function SignInPage() {
             type="email"
             name="email"
             className={css.input}
+            placeholder="example@mail.com"
             required
           />
         </div>
@@ -50,13 +60,18 @@ export default function SignInPage() {
             type="password"
             name="password"
             className={css.input}
+            placeholder="••••••••"
             required
           />
         </div>
 
         <div className={css.actions}>
-          <button type="submit" className={css.submitButton}>
-            Log in
+          <button
+            type="submit"
+            className={css.submitButton}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Logging in...' : 'Log in'}
           </button>
         </div>
 
