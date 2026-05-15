@@ -1,30 +1,14 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
-import { deleteNote } from '@/lib/api/clientApi';
-import type { Note } from '../../types/note';
+import { Note } from '@/types/note';
 import css from './NoteList.module.css';
-import Link from 'next/link';
 
 interface NoteListProps {
   notes: Note[];
+  onDelete: (id: string) => void;
 }
 
-export default function NoteList({ notes }: NoteListProps) {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: deleteNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      toast.success('Note deleted successfully');
-    },
-    onError: () => {
-      toast.error('Failed to delete note');
-    },
-  });
-
+export default function NoteList({ notes, onDelete }: NoteListProps) {
   if (!notes || notes.length === 0) {
     return <p className={css.empty}>No notes found.</p>;
   }
@@ -32,19 +16,15 @@ export default function NoteList({ notes }: NoteListProps) {
   return (
     <ul className={css.list}>
       {notes.map(note => (
-        <li key={note.id} className={css.item}>
-          <Link href={`/notes/${note.id}`} className={css.link}>
-            <h3 className={css.title}>{note.title}</h3>
-            <p className={css.excerpt}>{note.content}</p>
+        <li key={note.id} className={css.listItem}>
+          <h2 className={css.title}>{note.title}</h2>
+          <p className={css.content}>{note.content}</p>
+          <div className={css.footer}>
             <span className={css.tag}>{note.tag}</span>
-          </Link>
-          <button
-            onClick={() => mutation.mutate(note.id)}
-            className={css.deleteButton}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? '...' : 'Delete'}
-          </button>
+            <button className={css.button} onClick={() => onDelete(note.id)}>
+              Delete
+            </button>
+          </div>
         </li>
       ))}
     </ul>

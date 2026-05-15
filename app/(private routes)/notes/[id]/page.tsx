@@ -1,11 +1,12 @@
-import { fetchNoteById } from '@/lib/api/serverApi';
-import { notFound } from 'next/navigation';
-import NoteDetailsClient from './NoteDetails.client';
 import {
   QueryClient,
   dehydrate,
   HydrationBoundary,
 } from '@tanstack/react-query';
+import { notFound } from 'next/navigation';
+import { fetchNoteById } from '@/lib/api/serverApi';
+import NoteDetailsClient from './NoteDetails.client';
+import { Note } from '@/types/note';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -20,11 +21,11 @@ export default async function NotePage({ params }: Props) {
       queryKey: ['note', id],
       queryFn: () => fetchNoteById(id),
     });
-  } catch (error) {
+  } catch {
     return notFound();
   }
 
-  const initialData = queryClient.getQueryData(['note', id]);
+  const initialData = queryClient.getQueryData<Note>(['note', id]);
 
   if (!initialData) {
     return notFound();

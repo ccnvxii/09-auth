@@ -1,5 +1,6 @@
 import { api } from './api';
 import { User } from '@/types/user';
+import { NotesResponse } from '@/types/note'; 
 
 export const register = async (data: Record<string, string>): Promise<User> => {
   const res = await api.post<User>('/auth/register', data);
@@ -19,7 +20,7 @@ export const checkSession = async (): Promise<User | null> => {
   try {
     const res = await api.get<User | null>('/auth/session');
     return res.data || null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -35,20 +36,15 @@ export const updateMe = async (data: { username: string }): Promise<User> => {
 };
 
 export const fetchNotes = async (
-  page: number = 1,
-  search: string = '',
-  tag: string = ''
+  page: number | string, 
+  perPage: number | string, 
+  tag: string,
+  search: string = '' 
 ) => {
-  const params: Record<string, string | number> = {
-    page,
-    perPage: 12,
-  };
-
-  if (search.trim()) params.search = search;
-  if (tag && tag !== 'all') params.tag = tag;
-
-  const res = await api.get('/notes', { params });
-  return res.data;
+  const { data } = await api.get<NotesResponse>(`/notes`, {
+    params: { page, perPage, tag, title: search },
+  });
+  return data;
 };
 
 export const fetchNoteById = async (id: string) => {

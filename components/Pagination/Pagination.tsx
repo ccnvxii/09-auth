@@ -1,38 +1,38 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import ReactPaginate from 'react-paginate';
 import css from './Pagination.module.css';
 
 interface PaginationProps {
   totalPages: number;
+  currentPage: number;
+  onChange: (page: number) => void;
 }
 
-export default function Pagination({ totalPages }: PaginationProps) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { replace } = useRouter();
-
-  const currentPage = Number(searchParams.get('page')) || 1;
-
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', page.toString());
-    replace(`${pathname}?${params.toString()}`);
+export default function Pagination({
+  totalPages,
+  currentPage,
+  onChange,
+}: PaginationProps) {
+  const handlePageClick = (event: { selected: number }) => {
+    onChange(event.selected + 1);
   };
 
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-
   return (
-    <div className={css.pagination}>
-      {pages.map(page => (
-        <button
-          key={page}
-          onClick={() => handlePageChange(page)}
-          className={`${css.pageButton} ${currentPage === page ? css.active : ''}`}
-        >
-          {page}
-        </button>
-      ))}
-    </div>
+    <ReactPaginate
+      breakLabel="..."
+      nextLabel="→"
+      previousLabel="←"
+      onPageChange={handlePageClick}
+      pageRangeDisplayed={3}
+      pageCount={totalPages}
+      forcePage={currentPage - 1}
+      renderOnZeroPageCount={null}
+      containerClassName={css.pagination}
+      activeClassName={css.active}
+      previousClassName={css.pageItem}
+      nextClassName={css.pageItem}
+      pageClassName={css.pageItem}
+    />
   );
 }
