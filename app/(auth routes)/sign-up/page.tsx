@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import { register } from '@/lib/api/clientApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import css from './SignUp.module.css';
@@ -22,8 +23,14 @@ export default function SignUpPage() {
       const user = await register({ email, password });
       setUser(user);
       router.push('/profile');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'Registration failed');
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Registration failed');
+      }
     }
   };
 

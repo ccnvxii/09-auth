@@ -22,11 +22,10 @@ export default async function NoteModalPage({ params }: Props) {
   });
 
   const dehydratedState = dehydrate(queryClient);
-  const initialData = queryClient.getQueryData(['note', id]);
 
   return (
     <HydrationBoundary state={dehydratedState}>
-      <NotePreviewClient id={id} initialData={initialData} />
+      <NotePreviewClient id={id} />
     </HydrationBoundary>
   );
 }
